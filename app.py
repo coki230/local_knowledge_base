@@ -25,9 +25,6 @@ def query_file():
         if not os.path.exists(file_path):
             return jsonify({'error': 'File or path does not exist'}), 404
 
-        if not os.path.isfile(file_path):
-            return jsonify({'error': 'Path exists but it is not a file'}), 400
-
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
 

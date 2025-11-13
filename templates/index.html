@@ -21,13 +21,18 @@
             background: rgba(255, 255, 255, 0.1);
             border: none;
         }
-        .input-group-text {
-            cursor: pointer;
-            background-color: #fff;
-            color: #495057;
+        .form-control {
+            border-radius: 10px;
         }
-        .form-control[readonly] {
-            background-color: white;
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: bold;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
         }
         h1 {
             font-weight: bold;
@@ -51,106 +56,62 @@
             <div class="card p-4">
                 <h1 class="text-center mb-4">📄 File Content Viewer</h1>
 
-                <!-- Unified Input Group -->
-                <div class="input-group mb-4">
+                <div class="mb-3">
+                    <label for="filePath" class="form-label">Enter file path:</label>
                     <input type="text"
-                           class="form-control form-control-lg"
-                           id="filePathInput"
-                           placeholder="Enter file path or click folder icon to select file">
-
-                    <!-- Hidden file input -->
-                    <label for="fileSelector" class="input-group-text">
-                        📁
-                    </label>
-                    <input type="file"
-                           id="fileSelector"
-                           style="display: none;"
-                           onchange="handleFileSelected(this)">
-
-                    <!-- Query Button -->
-                    <button class="btn btn-primary btn-lg" onclick="query()">
-                        🔍 Query
-                    </button>
+                           class="form-control"
+                           id="filePath"
+                           placeholder="Example: /home/user/test.txt or C:\test\file.txt">
                 </div>
 
-                <!-- Result Area -->
+                <button class="btn btn-primary w-100 mb-4" onclick="queryFile()">
+                    🔍 Query File
+                </button>
+
                 <div id="resultArea" class="d-none">
                     <label for="resultContent" class="form-label">File Content:</label>
                     <textarea class="form-control" id="resultContent" readonly></textarea>
                 </div>
 
-                <!-- Error Alert -->
                 <div id="errorAlert" class="alert alert-danger d-none"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- jQuery -->
+<!-- jQuery + AJAX -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-let selectedFile = null; // Store selected file object
+function queryFile() {
+    const path = $('#filePath').val().trim();
+    const resultArea = $('#resultArea');
+    const resultContent = $('#resultContent');
+    const errorAlert = $('#errorAlert');
 
-// When user selects a file via dialog
-function handleFileSelected(input) {
-    if (input.files.length > 0) {
-        selectedFile = input.files[0];
-        document.getElementById('filePathInput').value = selectedFile.name; // Show filename
-    }
-}
-
-// Main query function
-function query() {
-    const inputField = document.getElementById('filePathInput');
-    const path = inputField.value.trim();
-    const resultArea = document.getElementById('resultArea');
-    const resultContent = document.getElementById('resultContent');
-    const errorAlert = document.getElementById('errorAlert');
-
-    // Reset UI
-    resultArea.classList.add('d-none');
-    errorAlert.classList.add('d-none');
+    resultArea.addClass('d-none');
+    errorAlert.addClass('d-none').text('');
 
     if (!path) {
-        showError("Please enter a file path or select a file.");
+        errorAlert.text('Please enter a valid file path').removeClass('d-none');
         return;
     }
 
-    // Case 1: User selected a file -> read locally in browser
-    if (selectedFile && path === selectedFile.name) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            resultContent.value = e.target.result;
-            resultArea.classList.remove('d-none');
-        };
-        reader.onerror = () => showError("Failed to read selected file.");
-        reader.readAsText(selectedFile);
-    }
-    // Case 2: User typed a path -> send to backend
-    else {
-        $.ajax({
-            url: '/query',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ path: path }),
-            success: function(res) {
-                if (res.content !== undefined) {
-                    resultContent.value = res.content;
-                    resultArea.classList.remove('d-none');
-                }
-            },
-            error: function(xhr) {
-                const msg = xhr.responseJSON?.error || 'Failed to read file.';
-                showError(msg);
+    $.ajax({
+        url: '/query',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ path: path }),
+        success: function(res) {
+            if (res.content !== undefined) {
+                resultContent.val(res.content);
+                resultArea.removeClass('d-none');
             }
-        });
-    }
-}
-
-function showError(msg) {
-    const errorAlert = document.getElementById('errorAlert');
-    errorAlert.textContent = msg;
-    errorAlert.classList.remove('d-none');
+        },
+        error: function(xhr) {
+            const errorMsg = xhr.responseJSON?.error || 'An unknown error occurred';
+            errorAlert.text(errorMsg).removeClass('d-none');
+        }
+    });
 }
 </script>
 </body>
