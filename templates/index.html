@@ -34,6 +34,14 @@
         .btn-primary:hover {
             background-color: #0b5ed7;
         }
+        .btn-outline-light {
+            color: #fff;
+            border-color: rgba(255,255,255,0.5);
+            border-radius: 10px;
+        }
+        .btn-outline-light:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
         h1, h2 {
             font-weight: bold;
             text-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -46,9 +54,6 @@
         }
         .alert {
             border-radius: 10px;
-        }
-        #mainInterface, #initSection {
-            transition: opacity 0.3s ease;
         }
     </style>
 </head>
@@ -69,9 +74,25 @@
                                id="initPath"
                                placeholder="e.g., /home/user/docs.txt or C:\data\kb.txt">
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Document Language:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="docLang" id="lang-en" autocomplete="off" checked>
+                            <label class="btn btn-outline-light" for="lang-en">English</label>
 
-                    <button class="btn btn-primary w-100" onclick="initialize()">
+                            <input type="radio" class="btn-check" name="docLang" id="lang-zh" autocomplete="off">
+                            <label class="btn btn-outline-light" for="lang-zh">中文</label>
+                        </div>
+                    </div>
+
+
+                    <button class="btn btn-primary w-100 mb-2" onclick="initialize()">
                         🔧 Initialize
+                    </button>
+
+                    <!-- 直接进入按钮 -->
+                    <button class="btn btn-outline-light w-100" onclick="enterDirectly()">
+                        🔍 Enter Directly (Skip Init)
                     </button>
 
                     <div id="initError" class="alert alert-danger d-none mt-3"></div>
@@ -79,7 +100,7 @@
             </div>
 
             <!-- 主交互界面（默认隐藏） -->
-            <div id="mainInterface" class="d-none">
+            <div id="mainInterface" style="display: none;">
                 <div class="card p-4">
                     <h2 class="text-center mb-4">💬 Question & Answer Interface</h2>
 
@@ -116,9 +137,9 @@
 // 当前是否已初始化
 let isInitialized = false;
 
-// 初始化系统
 function initialize() {
     const path = $('#initPath').val().trim();
+    const lang = $('#lang-zh').prop('checked') ? 'zh' : 'en'; // 默认 en
     const errorBox = $('#initError');
 
     errorBox.addClass('d-none').text('');
@@ -128,12 +149,15 @@ function initialize() {
         return;
     }
 
-    // 发送到后端进行初始化（例如加载文档到内存）
+    // 发送到后端进行初始化
     $.ajax({
         url: '/initialize',
         method: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ path: path }),
+        data: JSON.stringify({
+            path: path,
+            language: lang  // ← 新增：发送语言选项
+        }),
         success: function(res) {
             if (res.status === 'success') {
                 showMainInterface();
@@ -148,11 +172,14 @@ function initialize() {
     });
 }
 
-// 显示主界面，隐藏初始化界面
+
+// 显示主界面
 function showMainInterface() {
-    $('#initSection').fadeOut(300, () => {
-        $('#initSection').addClass('d-none');
-        $('#mainInterface').removeClass('d-none').css('opacity', 0).animate({ opacity: 1 }, 300);
+    $('#initSection').fadeOut(300, function () {
+        $('#mainInterface')
+            .show()
+            .css('opacity', 0)
+            .animate({ opacity: 1 }, 300);
     });
     isInitialized = true;
 }
@@ -187,17 +214,30 @@ function searchAnswer() {
     });
 }
 
-// 返回重新初始化
+// 重置系统：不调用后端，仅返回初始化界面
 function resetSystem() {
-    $.post('/reset', () => {
-        $('#mainInterface').fadeOut(300, () => {
-            $('#mainInterface').addClass('d-none');
-            $('#initSection').removeClass('d-none').css('opacity', 0).animate({ opacity: 1 }, 300);
-        });
-        $('#answerOutput').val('');
-        $('#questionInput').val('');
-        isInitialized = false;
+    $('#mainInterface').fadeOut(300, function () {
+        $('#initSection')
+            .show()
+            .css('opacity', 0)
+            .animate({ opacity: 1 }, 300);
     });
+
+    // 清空内容
+    $('#questionInput').val('');
+    $('#answerOutput').val('');
+    // 若想保留路径，可注释下一行
+    $('#initPath').val('');
+    $('#initError').addClass('d-none').text('');
+
+    isInitialized = false;
+}
+
+// 直接进入主界面（跳过初始化）
+function enterDirectly() {
+    if (confirm("You are entering directly. Make sure backend has loaded default document.\nContinue?")) {
+        showMainInterface();
+    }
 }
 
 // 工具函数：显示错误

@@ -1,5 +1,7 @@
 from pathlib import Path
 import os
+from enum import Enum
+
 # if you in China you should set the HF_ENDPOINT, fuck the GreatWall. if you not in China, pls delete it.
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["HF_HUB_CONCURRENT_DOWNLOADS"] = "3"
@@ -22,17 +24,27 @@ from langchain_community.document_loaders import (
     CSVLoader,
 )
 
+class FileType(Enum):
+    TXT = ".txt"
+    PDF = ".pdf"
+    DOCX = ".docx"
+    PPTX = ".pptx"
+    CSV = ".csv"
+
+
+embedding_model = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
+
 def load_document(file_path):
     _, ext = os.path.splitext(file_path)
-    if ext == ".txt":
+    if ext == FileType.TXT.value:
         loader = TextLoader(file_path, encoding="utf-8")
-    elif ext == ".pdf":
+    elif ext == FileType.PDF.value:
         loader = PyPDFLoader(file_path)
-    elif ext == ".docx":
+    elif ext == FileType.DOCX.value:
         loader = Docx2txtLoader(file_path)
-    elif ext == ".pptx":
+    elif ext == FileType.PPTX.value:
         loader = UnstructuredPowerPointLoader(file_path)
-    elif ext == ".csv":
+    elif ext == FileType.CSV.value:
         loader = CSVLoader(file_path)
     else:
         raise ValueError(f"Unsupported file type: {ext}")
@@ -46,8 +58,7 @@ def split_document(document):
     splits = splitter.split_documents(document)
     return splits
 
-def embed_and_save(split_documents):
-    embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-small-zh-v1.5")
+def embed_and_save(split_documents, embeddings):
     if not os.path.exists(chroma_db_path):
         vectorstore = Chroma.from_documents(
             documents=split_documents,
@@ -55,12 +66,11 @@ def embed_and_save(split_documents):
             persist_directory=chroma_db_path  # 可选：保存到磁盘
         )
     else:
-        vectorstore = Chroma.from_documents(
-            documents=split_documents,
-            embedding=embeddings,
-        )
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-    return retriever
+        # 加载已有数据库
+        vectorstore = Chroma(persist_directory=chroma_db_path, embedding_function=embeddings)
+        vectorstore.add_documents(documents=split_documents)
+
+    vectorstore.persist()
 
 def get_llm():
     model_id = "Qwen/Qwen2-1.5B-Instruct"
@@ -85,15 +95,22 @@ def get_llm():
     llm = HuggingFacePipeline(pipeline=pipe)
     return llm
 
-def query(question, q_retriever):
+def query(question, q_retriever, lang_type):
     llm = get_llm()
 
     # 自定义提示模板
-    template = """根据以下上下文回答问题：
-    {context}
+    if lang_type == "en":
+        template = """Answer the questions based on the following context, with the answers primarily relying on the context. If there is a discrepancy between the context and reality, provide the answer according to the context first, and then supplement with the differences from reality.：
+        {context}
 
-    问题: {question}
-    """
+        Question: {question}
+        """
+    else:
+        template = """根据以下上下文回答问题，答案以上下文为主，如果上下文和实际有出入，先给出上下文的答案，后在补充和实际的差异：
+        {context}
+    
+        问题: {question}
+        """
     prompt = ChatPromptTemplate.from_template(template)
 
     # 构建 RAG 链
@@ -106,15 +123,74 @@ def query(question, q_retriever):
     response = rag_chain.invoke(question)
     print(response)
 
+def get_all_files(directory):
+    folder = Path(directory)
+    extensions = [file_type.value for file_type in FileType]# 想要的文件类型
+    files = [f for f in folder.rglob('*') if f.is_file() and f.suffix.lower() in extensions]
+    return files
 
-# 批量加载 data/ 目录下所有支持的文件
-for file in Path("/Users/coki/Desktop/教程/test").rglob("*.pdf"):
-    print(file)
-    docs = load_document(file)
-    print(len(docs))
-    splits = split_document(docs)
-    print(len(splits))
-    print(splits[0])
-    retriever = embed_and_save(splits)
-    result = query("what is Stack Exchange? ",retriever)
-    print(result)
+def parse_file(file_path, embeddings):
+    documents = load_document(file_path)
+    splits = split_document(documents)
+    embed_and_save(splits, embeddings)
+
+def get_retriever(embeddings):
+    if not os.path.exists(chroma_db_path):
+        raise ValueError("cannot find chroma db")
+    else:
+        vectorstore = Chroma(persist_directory=chroma_db_path, embedding_function=embeddings)
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    return retriever
+
+def classify_language(text):
+    if not text:
+        return "empty"
+
+    # 统计中文和英文字母的数量
+    chinese_count = 0
+    english_count = 0
+
+    for char in text:
+        code = ord(char)
+        # 判断是否为中文字符（常见汉字范围）
+        if 0x4e00 <= code <= 0x9fff:
+            chinese_count += 1
+        # 判断是否为英文字母
+        elif 65 <= code <= 90 or 97 <= code <= 122:  # A-Z 或 a-z
+            english_count += 1
+
+    total_letters = chinese_count + english_count
+
+    if total_letters == 0:
+        return "other"  # 比如全是数字、标点等
+
+    # 判断主体语言
+    if chinese_count < english_count:
+        return "en"
+    else:
+        return "zh"
+
+def init_llm(directory):
+    all_file = get_all_files(directory)
+    for file in all_file:
+        parse_file(file, embedding_model)
+
+def retrieve_language(text):
+    lang_type = classify_language(text)
+    return query(text, get_retriever(embedding_model), lang_type)
+
+
+#
+# # 批量加载 data/ 目录下所有支持的文件
+# for file in Path("/Users/coki/Desktop/教程/test").rglob("*.pdf"):
+#     print(file)
+#     docs = load_document(file)
+#     print(len(docs))
+#     splits = split_document(docs)
+#     print(len(splits))
+#     print(splits[0])
+#     retriever = embed_and_save(splits)
+#     result = query("what is Stack Exchange? ",retriever)
+#     print(result)
+
+
