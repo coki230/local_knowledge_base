@@ -156,7 +156,7 @@ function initialize() {
         contentType: 'application/json',
         data: JSON.stringify({
             path: path,
-            language: lang  // ← 新增：发送语言选项
+            language: lang
         }),
         success: function(res) {
             if (res.status === 'success') {
@@ -171,7 +171,6 @@ function initialize() {
         }
     });
 }
-
 
 // 显示主界面
 function showMainInterface() {
@@ -199,6 +198,9 @@ function searchAnswer() {
         return;
     }
 
+    // 清空上一次的答案，并显示加载动画
+    answerBox.val("🔍 Loading... Please wait.").prop('readonly', true);
+
     // 调用后端搜索接口
     $.ajax({
         url: '/query',
@@ -206,10 +208,10 @@ function searchAnswer() {
         contentType: 'application/json',
         data: JSON.stringify({ question: question }),
         success: function(res) {
-            answerBox.val(res.answer || "No answer found.");
+            answerBox.val(res.answer || "No answer found.").prop('readonly', false);
         },
         error: function() {
-            answerBox.val("Error occurred while processing your question.");
+            answerBox.val("❌ Error occurred while processing your request.").prop('readonly', false);
         }
     });
 }
@@ -225,7 +227,7 @@ function resetSystem() {
 
     // 清空内容
     $('#questionInput').val('');
-    $('#answerOutput').val('');
+    $('#answerOutput').val('').prop('readonly', false);
     // 若想保留路径，可注释下一行
     $('#initPath').val('');
     $('#initError').addClass('d-none').text('');
@@ -244,6 +246,16 @@ function enterDirectly() {
 function showError($el, msg) {
     $el.text(msg).removeClass('d-none');
 }
+
+// 绑定回车键到 #questionInput 触发搜索
+$(document).ready(function () {
+    $('#questionInput').on('keypress', function (e) {
+        if (e.which === 13) { // Enter key
+            searchAnswer();
+        }
+    });
+});
 </script>
+
 </body>
 </html>

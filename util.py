@@ -7,10 +7,9 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["HF_HUB_CONCURRENT_DOWNLOADS"] = "3"
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-from langchain_huggingface import HuggingFacePipeline
+from langchain_huggingface import HuggingFacePipeline, HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
@@ -31,8 +30,15 @@ class FileType(Enum):
     PPTX = ".pptx"
     CSV = ".csv"
 
+class LangType(Enum):
+    EN = "en"
+    ZH = "zh"
 
-embedding_model = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
+def get_embedding_model(lang_type):
+    if lang_type == LangType.ZH.value:
+        return HuggingFaceEmbeddings(model_name="BAAI/bge-small-zh-v1.5")
+    else:
+        return HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")
 
 def load_document(file_path):
     _, ext = os.path.splitext(file_path)
@@ -121,7 +127,7 @@ def query(question, q_retriever, lang_type):
             | StrOutputParser()
     )
     response = rag_chain.invoke(question)
-    print(response)
+    return response
 
 def get_all_files(directory):
     folder = Path(directory)
@@ -170,27 +176,15 @@ def classify_language(text):
     else:
         return "zh"
 
-def init_llm(directory):
+def init_llm(directory, lang_type):
     all_file = get_all_files(directory)
     for file in all_file:
-        parse_file(file, embedding_model)
+        parse_file(file, get_embedding_model(lang_type))
 
 def retrieve_language(text):
     lang_type = classify_language(text)
+    embedding_model = get_embedding_model(lang_type)
     return query(text, get_retriever(embedding_model), lang_type)
 
-
-#
-# # 批量加载 data/ 目录下所有支持的文件
-# for file in Path("/Users/coki/Desktop/教程/test").rglob("*.pdf"):
-#     print(file)
-#     docs = load_document(file)
-#     print(len(docs))
-#     splits = split_document(docs)
-#     print(len(splits))
-#     print(splits[0])
-#     retriever = embed_and_save(splits)
-#     result = query("what is Stack Exchange? ",retriever)
-#     print(result)
 
 
