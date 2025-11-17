@@ -64,16 +64,18 @@ def split_document(document):
     splits = splitter.split_documents(document)
     return splits
 
-def embed_and_save(split_documents, embeddings):
-    if not os.path.exists(chroma_db_path):
+def embed_and_save(split_documents, embeddings, lang_type):
+    # diff language use diff vector
+    c_path = get_db_path(lang_type)
+    if not os.path.exists(c_path):
         vectorstore = Chroma.from_documents(
             documents=split_documents,
             embedding=embeddings,
-            persist_directory=chroma_db_path  # 可选：保存到磁盘
+            persist_directory=c_path  # 可选：保存到磁盘
         )
     else:
         # 加载已有数据库
-        vectorstore = Chroma(persist_directory=chroma_db_path, embedding_function=embeddings)
+        vectorstore = Chroma(persist_directory=c_path, embedding_function=embeddings)
         vectorstore.add_documents(documents=split_documents)
 
     vectorstore.persist()
@@ -106,7 +108,9 @@ def query(question, q_retriever, lang_type):
 
     # 自定义提示模板
     if lang_type == "en":
-        template = """Answer the questions based on the following context, with the answers primarily relying on the context. If there is a discrepancy between the context and reality, provide the answer according to the context first, and then supplement with the differences from reality.：
+        template = """Answer the questions based on the following context, If there is a gap between the context and reality, 
+        provide the answer according to the context first, 
+        and then supplement with the differences from reality.：
         {context}
 
         Question: {question}
@@ -135,16 +139,22 @@ def get_all_files(directory):
     files = [f for f in folder.rglob('*') if f.is_file() and f.suffix.lower() in extensions]
     return files
 
-def parse_file(file_path, embeddings):
+def parse_file(file_path, embeddings, lang_type):
     documents = load_document(file_path)
     splits = split_document(documents)
-    embed_and_save(splits, embeddings)
+    embed_and_save(splits, embeddings, lang_type)
 
-def get_retriever(embeddings):
-    if not os.path.exists(chroma_db_path):
+def get_db_path(lang_type):
+    # diff language use diff vector
+    c_path = chroma_db_path + "_" + lang_type
+    return c_path
+
+def get_retriever(embeddings, lang_type):
+    c_path = get_db_path(lang_type)
+    if not os.path.exists(c_path):
         raise ValueError("cannot find chroma db")
     else:
-        vectorstore = Chroma(persist_directory=chroma_db_path, embedding_function=embeddings)
+        vectorstore = Chroma(persist_directory=c_path, embedding_function=embeddings)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
     return retriever
 
@@ -179,12 +189,12 @@ def classify_language(text):
 def init_llm(directory, lang_type):
     all_file = get_all_files(directory)
     for file in all_file:
-        parse_file(file, get_embedding_model(lang_type))
+        parse_file(file, get_embedding_model(lang_type), lang_type)
 
-def retrieve_language(text):
-    lang_type = classify_language(text)
+def retrieve_language(text, lang_type):
+    # lang_type = classify_language(text)
     embedding_model = get_embedding_model(lang_type)
-    return query(text, get_retriever(embedding_model), lang_type)
+    return query(text, get_retriever(embedding_model, lang_type), lang_type)
 
 
 

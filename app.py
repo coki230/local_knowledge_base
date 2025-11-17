@@ -37,11 +37,12 @@ def query():
 
     data = request.get_json()
     question = data.get('question', '').lower()
+    language = data.get('language', '').lower()
 
     # 简单模拟回答（你可以替换成调用大模型或检索逻辑）
-    answer = retrieve_language(question)
+    answer = retrieve_language(question, language)
 
     return jsonify({'answer': answer})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)

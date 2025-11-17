@@ -25,7 +25,7 @@
 
 ## 🗨️ 联系方法
 
-如果希望更详细的了解，可以邮寄联系我
+如果希望更详细的了解，可以邮件联系我
 
 - **Email**:  [xiao230coki@gmail.com](mailto:xiao230coki@gmail.com).
 - **Issues**: 可以在项目里的Issues里留言，邮件不经常看，Issues会经常看

@@ -6,6 +6,8 @@
     <title>Document Q&A System</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Custom Styles -->
     <style>
         body {
@@ -55,6 +57,10 @@
         .alert {
             border-radius: 10px;
         }
+        /* 防止背景滚动 */
+        .modal-backdrop {
+            z-index: 1000;
+        }
     </style>
 </head>
 <body class="py-5">
@@ -85,7 +91,6 @@
                         </div>
                     </div>
 
-
                     <button class="btn btn-primary w-100 mb-2" onclick="initialize()">
                         🔧 Initialize
                     </button>
@@ -105,7 +110,10 @@
                     <h2 class="text-center mb-4">💬 Question & Answer Interface</h2>
 
                     <div class="mb-3">
-                        <label for="questionInput" class="form-label">Ask a Question:</label>
+                        <label for="questionInput" class="form-label">
+                            Ask a Question:
+                            <span id="languageBadge" class="badge bg-info ms-2">English Mode</span>
+                        </label>
                         <input type="text"
                                class="form-control"
                                id="questionInput"
@@ -136,6 +144,7 @@
 <script>
 // 当前是否已初始化
 let isInitialized = false;
+let currentLanguage = 'en'; // 默认英文
 
 function initialize() {
     const path = $('#initPath').val().trim();
@@ -149,6 +158,15 @@ function initialize() {
         return;
     }
 
+    // === 开始初始化：禁用输入和按钮 ===
+    const initBtn = $('button[onclick="initialize()"]');
+    const originalText = initBtn.html();
+
+    // 显示加载状态
+    initBtn.html('<span class="spinner-border spinner-border-sm" role="status"></span> Initializing...')
+           .prop('disabled', true);
+    $('#initPath, #lang-en, #lang-zh').prop('disabled', true);
+
     // 发送到后端进行初始化
     $.ajax({
         url: '/initialize',
@@ -160,7 +178,8 @@ function initialize() {
         }),
         success: function(res) {
             if (res.status === 'success') {
-                showMainInterface();
+                currentLanguage = lang; // 保存语言到全局变量
+                showMainInterface(lang); // 将语言传入主界面
             } else {
                 showError(errorBox, res.message || 'Initialization failed.');
             }
@@ -168,12 +187,25 @@ function initialize() {
         error: function(xhr) {
             const msg = xhr.responseJSON?.error || 'Failed to initialize.';
             showError(errorBox, msg);
+        },
+        complete: function () {
+            // 请求结束，恢复按钮状态
+            initBtn.html(originalText).prop('disabled', false);
+            $('#initPath, #lang-en, #lang-zh').prop('disabled', false);
         }
     });
 }
 
-// 显示主界面
-function showMainInterface() {
+// 显示主界面，并标记语言
+function showMainInterface(lang) {
+    // 设置 badge 文字和颜色
+    const badge = $('#languageBadge');
+    if (lang === 'zh') {
+        badge.text('中文模式').removeClass('bg-info').addClass('bg-success');
+    } else {
+        badge.text('English Mode').removeClass('bg-success').addClass('bg-info');
+    }
+
     $('#initSection').fadeOut(300, function () {
         $('#mainInterface')
             .show()
@@ -201,17 +233,21 @@ function searchAnswer() {
     // 清空上一次的答案，并显示加载动画
     answerBox.val("🔍 Loading... Please wait.").prop('readonly', true);
 
-    // 调用后端搜索接口
+    // 调用后端搜索接口，包含 language
     $.ajax({
         url: '/query',
         method: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ question: question }),
+        data: JSON.stringify({
+            question: question,
+            language: currentLanguage  // 👈 发送语言参数
+        }),
         success: function(res) {
             answerBox.val(res.answer || "No answer found.").prop('readonly', false);
         },
-        error: function() {
-            answerBox.val("❌ Error occurred while processing your request.").prop('readonly', false);
+        error: function(xhr) {
+            const msg = xhr.responseJSON?.error || "Error occurred while processing your request.";
+            answerBox.val("❌ " + msg).prop('readonly', false);
         }
     });
 }
@@ -237,10 +273,13 @@ function resetSystem() {
 
 // 直接进入主界面（跳过初始化）
 function enterDirectly() {
+    const lang = $('#lang-zh').prop('checked') ? 'zh' : 'en';
     if (confirm("You are entering directly. Make sure backend has loaded default document.\nContinue?")) {
-        showMainInterface();
+        currentLanguage = lang; // 保存语言到全局变量
+        showMainInterface(lang);
     }
 }
+
 
 // 工具函数：显示错误
 function showError($el, msg) {
@@ -256,6 +295,5 @@ $(document).ready(function () {
     });
 });
 </script>
-
 </body>
 </html>
