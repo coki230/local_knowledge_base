@@ -1,0 +1,44 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python application
+
+on:
+  push:
+    tags: [ "v*" ]
+  workflow_dispatch:
+permissions:
+  contents: write
+  discussions: write
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        brew install python@3.9
+        python3.9 -m venv ai
+        ls -a
+        source ai/bin/activate
+        echo "================="
+        python --version
+        echo "================="
+        python -m pip install --upgrade pip
+        pip install langchain
+        pip install flask
+        pip install langchain_community
+        pip install transformers
+        pip install langchain_huggingface
+        pip install langchain_core
+        pip list -v
+    - name: generate apk
+      run: |
+        pyinstaller  --add-data "templates:templates" --collect-all=chromadb --onefile app.py
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+          token: ${{ github.token }}
+          files: /Users/runner/work/local_knowledge_base/dist/app
+
