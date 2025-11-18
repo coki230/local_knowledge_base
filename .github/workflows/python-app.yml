@@ -31,6 +31,7 @@ jobs:
         pip install transformers
         pip install langchain_huggingface
         pip install langchain_core
+        pip install pyinstaller
         pip list -v
     - name: generate apk
       run: |
