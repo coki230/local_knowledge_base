@@ -22,10 +22,10 @@ support for images and other types of documents may be considered (if there are 
 you can suggest them in the Issues section, and we can continue to optimize based on feedback).
 
 ## ✨ Graphical Demonstration
-| Prepare Document | Initialize | Query Answer |
-|---------|--------|----------|
-| ![](img/doc.png) | ![](img/init.png) | ![](img/answer.png) |
-| 1. Prepare local document | 2. Enter path to initialize | 3. Ask questions to get answers |
+| Prepare Document          | ![](img/doc.png)  | Prepare local document |
+|---------------------------|--------|----------|
+| Initialize                | ![](img/init.png) |  Enter path to initialize|
+| Query Answer| ![](img/answer.png) | Ask questions to get answers |
 
 ## ✨ usage
 
