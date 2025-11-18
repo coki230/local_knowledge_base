@@ -1,4 +1,5 @@
 <a name="top"></a>
+* Other languages：[English](README.md), [中文](README_zh.md)。 
 [![Free](https://img.shields.io/badge/free_for_non_commercial_use-brightgreen)](#-license)
 
 ⭐ 如果觉得还行，请帮忙打星 🙏😊
@@ -18,6 +19,9 @@
 
 ## ✨ 使用方法
 
+- 双击运行“app”（第一次运行会去HuggingFace下载必须的大模型，可能会比较慢）
+- 运行成功后页面会有类似“Running on http://127.0.0.1:5000”的提示
+- 打开浏览器输入：http://127.0.0.1:5000。进入系统
 - 输入文件路径后，点击初始化
 - 初始化完成后会把对应的文档内容转为向量数据保存到本地的向量数据库
 - 可以多次初始化（比如包含多个文件路径）

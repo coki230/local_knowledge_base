@@ -1,4 +1,5 @@
 <a name="top"></a>
+* Other languages：[English](README.md), [中文](README_zh.md)。 
 [![Free](https://img.shields.io/badge/free_for_non_commercial_use-brightgreen)](#-license)
 
 ⭐ If you think it's okay, please help give a star. 🙏😊
@@ -20,6 +21,9 @@ you can suggest them in the Issues section, and we can continue to optimize base
 
 ## ✨ usage
 
+- Double-click to run the 'app'(The first run will download the necessary large models from HuggingFace, which may be a bit slow)
+- After it runs successfully, the page will show a message like 'Running on http://127.0.0.1:5000'
+- Open a browser and enter: http://127.0.0.1:5000 to access the system
 - After entering the file path, click Initialize
 - Once initialization is complete, the corresponding document content will be converted into vector data and saved to the local vector database
 - Initialization can be done multiple times (for example, including multiple file paths)
