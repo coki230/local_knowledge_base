@@ -10,7 +10,7 @@ It does not require calling remote large models, completely offline, offline, of
 
 ## Table of Contents
 - [Introduction](#-introduction)
-- [Graphical Demonstration](#-Graphical Demonstration)
+- [Graphical Demonstration](#-Graphical-Demonstration)
 - [Usage](#-usage)
 - [Contact Information](#-contact-information)
 
@@ -21,7 +21,7 @@ Currently, it supports document types: [".txt", ".pdf", ".docx", ".pptx", ".csv"
 support for images and other types of documents may be considered (if there are other needs, 
 you can suggest them in the Issues section, and we can continue to optimize based on feedback).
 
-## ✨ Graphical Demonstration
+## ✨ Graphical-Demonstration
 | Prepare Document          | ![](img/doc.png)  | Prepare local document |
 |---------------------------|--------|----------|
 | Initialize                | ![](img/init.png) |  Enter path to initialize|
