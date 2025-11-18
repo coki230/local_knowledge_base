@@ -35,6 +35,7 @@ jobs:
         pip list -v
     - name: generate apk
       run: |
+        source ai/bin/activate
         pyinstaller  --add-data "templates:templates" --collect-all=chromadb --onefile app.py
     - name: Release
       uses: softprops/action-gh-release@v2
