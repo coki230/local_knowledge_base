@@ -10,6 +10,7 @@ It does not require calling remote large models, completely offline, offline, of
 
 ## Table of Contents
 - [Introduction](#-introduction)
+- [Graphical Demonstration](#-Graphical Demonstration)
 - [Usage](#-usage)
 - [Contact Information](#-contact-information)
 
@@ -20,8 +21,15 @@ Currently, it supports document types: [".txt", ".pdf", ".docx", ".pptx", ".csv"
 support for images and other types of documents may be considered (if there are other needs, 
 you can suggest them in the Issues section, and we can continue to optimize based on feedback).
 
+## ✨ Graphical Demonstration
+| Prepare Document | Initialize | Query Answer |
+|---------|--------|----------|
+| ![](img/doc.png) | ![](img/init.png) | ![](img/answer.png) |
+| 1. Prepare local document | 2. Enter path to initialize | 3. Ask questions to get answers |
+
 ## ✨ usage
 
+- Download the app file from the Releases page (currently only the macOS version is compiled; other versions will be added if needed)
 - Double-click to run the 'app'(The first run will download the necessary large models from HuggingFace, which may be a bit slow)
 - After it runs successfully, the page will show a message like 'Running on http://127.0.0.1:5000'
 - Open a browser and enter: http://127.0.0.1:5000 to access the system
