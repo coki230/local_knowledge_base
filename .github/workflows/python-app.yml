@@ -42,5 +42,5 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
           token: ${{ github.token }}
-          files: /Users/runner/work/local_knowledge_base/dist/app
+          files: /Users/runner/work/local_knowledge_base/local_knowledge_base/dist/app
 
