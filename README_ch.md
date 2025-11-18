@@ -1,5 +1,6 @@
 <a name="top"></a>
-* Other languages：[English](README.md), [中文](README_zh.md)。 
+* Other languages：[English](README.md), [中文](README_ch.md)。
+
 [![Free](https://img.shields.io/badge/free_for_non_commercial_use-brightgreen)](#-license)
 
 ⭐ 如果觉得还行，请帮忙打星 🙏😊
