@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from enum import Enum
+from hyde import HyDEGenerator
 
 # if you in China you should set the HF_ENDPOINT, fuck the GreatWall. if you not in China, pls delete it.
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
@@ -105,6 +106,9 @@ def get_llm():
 
 def query(question, q_retriever, lang_type):
     llm = get_llm()
+    hyde = HyDEGenerator(llm)
+    hyde_prompt = hyde.generate(question, lang_type)
+
 
     # 自定义提示模板
     if lang_type == "en":
@@ -130,7 +134,7 @@ def query(question, q_retriever, lang_type):
             | llm
             | StrOutputParser()
     )
-    response = rag_chain.invoke(question)
+    response = rag_chain.invoke(hyde_prompt)
     return response
 
 def get_all_files(directory):
@@ -158,35 +162,35 @@ def get_retriever(embeddings, lang_type):
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
     return retriever
 
-def classify_language(text):
-    if not text:
-        return "empty"
+# def classify_language(text):
+#     if not text:
+#         return "empty"
+#
+#     # 统计中文和英文字母的数量
+#     chinese_count = 0
+#     english_count = 0
+#
+#     for char in text:
+#         code = ord(char)
+#         # 判断是否为中文字符（常见汉字范围）
+#         if 0x4e00 <= code <= 0x9fff:
+#             chinese_count += 1
+#         # 判断是否为英文字母
+#         elif 65 <= code <= 90 or 97 <= code <= 122:  # A-Z 或 a-z
+#             english_count += 1
+#
+#     total_letters = chinese_count + english_count
+#
+#     if total_letters == 0:
+#         return "other"  # 比如全是数字、标点等
+#
+#     # 判断主体语言
+#     if chinese_count < english_count:
+#         return "en"
+#     else:
+#         return "zh"
 
-    # 统计中文和英文字母的数量
-    chinese_count = 0
-    english_count = 0
-
-    for char in text:
-        code = ord(char)
-        # 判断是否为中文字符（常见汉字范围）
-        if 0x4e00 <= code <= 0x9fff:
-            chinese_count += 1
-        # 判断是否为英文字母
-        elif 65 <= code <= 90 or 97 <= code <= 122:  # A-Z 或 a-z
-            english_count += 1
-
-    total_letters = chinese_count + english_count
-
-    if total_letters == 0:
-        return "other"  # 比如全是数字、标点等
-
-    # 判断主体语言
-    if chinese_count < english_count:
-        return "en"
-    else:
-        return "zh"
-
-def init_llm(directory, lang_type):
+def init_embedding(directory, lang_type):
     all_file = get_all_files(directory)
     for file in all_file:
         parse_file(file, get_embedding_model(lang_type), lang_type)
